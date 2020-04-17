@@ -388,6 +388,18 @@
 
             var vtsStatusURI = "{{uri}}/format/json", vtsUpdateInterval = 1000, vtsUpdate;
 
+            var statusCodes = [
+                                      '1xx', '2xx', '3xx', '4xx', '5xx',
+                                      '100', '101', '102',
+                                      '200', '201', '202', '203', '204', '205', '206', '207', '208', '226',
+                                      '300', '301', '302', '303', '304', '305', '307', '308',
+                                      '400', '401', '402', '403', '404', '405', '406', '407', '408', '409', '410', '411', '412', '413', '414', '415', '416', '417', '418', '421', '422', '423', '424', '426', '428', '429', '431', '444', '451', '499',
+                                      '500', '501', '502', '503', '504', '505', '506', '507', '508', '510', '511', '599'
+            ];
+
+            var cacheCodes = [ 'miss', 'bypass', 'expired', 'stale', 'updating', 'revalidated', 'hit', 'scarce' ];
+
+
             var vtsStatusVars = {
                 titles: {
                     main:"Server main",
@@ -523,20 +535,16 @@
 
                 heads[0] = '{}{}{}{}'.format(aHe('th rowspan="2"', 'Zone'),
                                              aHe('th colspan="3"', 'Requests'),
-                                             aHe('th colspan="70"', 'Responses'),
+                                             aHe('th colspan="' + (statusCodes.length + 1) + '"', 'Responses'),
                                              aHe('th colspan="4"', 'Traffic'));
 
                 if (cache) {
-                    heads[0] = '{}{}'.format(heads[0], aHe('th colspan="9"', 'Cache'));
+                    heads[0] = '{}{}'.format(heads[0], aHe('th colspan="' + (cacheCodes.length + 1) + '"', 'Cache'));
                 }
 
-                heads[1] = aHe('th', ['Total', 'Req/s', 'Time',
-                                      '1xx', '100', '101', '102',
-                                      '2xx', '200', '201', '202', '203', '204', '205', '206', '207', '208', '226',
-                                      '3xx', '300', '301', '302', '303', '304', '305', '306', '307', '308',
-                                      '4xx', '400', '401', '402', '403', '404', '405', '406', '407', '408', '409', '410', '411', '412', '413', '414', '415', '416', '417', '418', '421', '422', '423', '424', '426', '428', '429', '431', '444', '451', '499',
-                                      '5xx', '500', '501', '502', '503', '504', '505', '506', '507', '508', '510', '511', '599',
-                                      'Total', 'Sent', 'Rcvd', 'Sent/s', 'Rcvd/s']);
+                heads[1] = aHe('th', ['Total', 'Req/s', 'Time']
+                            .concat(statusCodes)
+                            .concat(['Total', 'Sent', 'Rcvd', 'Sent/s', 'Rcvd/s']));
 
                 if (cache) {
                     heads[1] = '{}{}'.format(heads[1], aHe('th', ['Miss', 'Bypass', 'Expired', 'Stale',
@@ -560,13 +568,9 @@
                                                        aHe('th colspan="70"', 'Responses'),
                                                        aHe('th colspan="4"', 'Traffic'));
 
-                heads[1] = aHe('th', ['Total', 'Req/s', 'Time',
-                                      '1xx', '100', '101', '102',
-                                      '2xx', '200', '201', '202', '203', '204', '205', '206', '207', '208', '226',
-                                      '3xx', '300', '301', '302', '303', '304', '305', '306', '307', '308',
-                                      '4xx', '400', '401', '402', '403', '404', '405', '406', '407', '408', '409', '410', '411', '412', '413', '414', '415', '416', '417', '418', '421', '422', '423', '424', '426', '428', '429', '431', '444', '451', '499',
-                                      '5xx', '500', '501', '502', '503', '504', '505', '506', '507', '508', '510', '511', '599',
-                                      'Total', 'Sent', 'Rcvd', 'Sent/s', 'Rcvd/s']);
+                heads[1] = aHe('th', ['Total', 'Req/s', 'Time']
+                            .concat(statusCodes)
+                            .concat(['Total', 'Sent', 'Rcvd', 'Sent/s', 'Rcvd/s']));
 
                 return aHe('thead', '{}{}'.format(aHe('tr', heads[0]), aHe('tr', heads[1])));
             }
@@ -646,11 +650,11 @@
                                                  aPs.getValue('{}.{}'.format(uniq, 'requestCounter'), zone.requestCounter), mTh(zone.requestMsec)
                                                 ]));
 
-                    for(var code in zone.responses) {
+                    for(var idx in statusCodes) {
+                        var code = statusCodes[idx];
                         responseCount = zone.responses[code] + zone.overCounts['maxIntegerSize'] * zone.overCounts[code];
                         responseTotal += responseCount;
                         s = '{}{}'.format(s, aHe('td', responseCount));
-                        if(code == '5xx') break;
                     }
 
                     s = '{}{}'.format(s, aHe('td', [responseTotal,
@@ -662,8 +666,8 @@
 
                     if (cache) {
                         var i = 0;
-                        for(var code in zone.responses) {
-                            if(i++ < 5) continue;
+                        for(var idx in cacheCodes) {
+                            var code = cacheCodes[idx];
                             cacheCount = (zone.responses[code] + zone.overCounts['maxIntegerSize'] * zone.overCounts[code]);
                             cacheTotal += cacheCount;
                             s = '{}{}'.format(s, aHe('td', cacheCount));
@@ -699,7 +703,8 @@
                                                  mTh(peer.requestMsec)
                                                 ]));
 
-                    for(var code in peer.responses) {
+                    for(var idx in statusCodes) {
+                        var code = statusCodes[idx];
                         responseCount = peer.responses[code] + peer.overCounts['maxIntegerSize'] * peer.overCounts[code];
                         responseTotal += responseCount;
                         s = '{}{}'.format(s, aHe('td', responseCount));
